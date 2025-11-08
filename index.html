@@ -114,73 +114,68 @@
       const elExample = document.getElementById('exampleBtn');
       const card = document.querySelector('.card');
 
-      const WARNING = 'Steam will not provide extra giftable copies of games you already own.';
+      // Normalize pasted Humble text (dashes, zero-width chars, NBSP, etc.)
+      function normalizeInput(s){
+        if(!s) return '';
+        s = s.normalize('NFKC');
+        // Replace various unicode dashes with ASCII hyphen
+        s = s.replace(/[‐-―−⁃]/g, '-');
+        // Remove zero-width and BOM
+        s = s.replace(/[​-‍﻿]/g, '');
+        // NBSP -> space
+        s = s.replace(/ /g, ' ');
+        return s;
+      }
 
       function parse(input){
-        const lines = input.split(/
+        const raw = normalizeInput(input);
+        const lines = raw.split(/
 ?
 /).map(s => s.trim());
         const entries = [];
-        const keyRegexStrict = /^[A-Z0-9]{5}-[A-Z0-9]{5}-[A-Z0-9]{5}$/;
-        const keyRegexLoose = /^[A-Z0-9]{4,5}-[A-Z0-9]{4,5}-[A-Z0-9]{4,5}$/; // toggleable
-        const keyRegex = elStrict.checked ? keyRegexStrict : keyRegexLoose;
 
-        for(let i=0;i<lines.length;i++){
-          const line = lines[i];
-          if(!line) continue;
-          if(!keyRegex.test(line)) continue;
-          const key = line.toUpperCase();
+        const strictRe = /^[A-Z0-9]{5}-[A-Z0-9]{5}-[A-Z0-9]{5}$/;
+        const looseRe  = /^[A-Z0-9]{4,5}-[A-Z0-9]{4,5}-[A-Z0-9]{4,5}$/;
+        const useStrict = elStrict.checked;
+        const keyRegex = useStrict ? strictRe : looseRe;
 
-          // find nearest usable title above the key
-          let title = '';
-          for(let j=i-1; j>=0; j--){
-            const t = lines[j];
-            if(!t) continue; // skip empty
-            if(/^redeem$/i.test(t)) continue; // skip Redeem buttons
-            if(t === WARNING) continue; // skip standard warning
-            if(/^steam key$/i.test(t)) continue;
-            title = t; break;
+        // Helper: decide if a line is boilerplate we should skip when finding titles
+        function isBoiler(s){
+          if(!s) return true;
+          if(/^redeem$/i.test(s)) return true;
+          if(/steam will not provide extra giftable copies/i.test(s)) return true;
+          if(/^steam key$/i.test(s)) return true;
+          if(/^copy$/i.test(s)) return true;
+          return false;
+        }
+
+        function collect(regex){
+          const found = [];
+          for(let i=0;i<lines.length;i++){
+            const line = lines[i].toUpperCase();
+            if(!regex.test(line)) continue;
+            const key = line; // already uppercased
+            // find nearest usable title above the key
+            let title = '';
+            for(let j=i-1; j>=0; j--){
+              const t = lines[j];
+              if(isBoiler(t)) continue;
+              title = t; break;
+            }
+            if(title) found.push({ title, key });
           }
-          if(title){ entries.push({ title, key }); }
+          return found;
         }
 
-        // Group by title to track duplicates/quantity
+        // Try strict first; if nothing parsed and strict toggle is on, fall back to loose
+        let found = collect(keyRegex);
+        if(found.length === 0 && useStrict){
+          found = collect(looseRe);
+        }
+
+        // Group by title
         const byTitle = new Map();
-        for(const {title, key} of entries){
-          if(!byTitle.has(title)) byTitle.set(title, []);
-          byTitle.get(title).push(key);
-        }
-
-        // Build output
-        let rows = [];
-        for(const [title, keys] of byTitle){
-          if(elDedupe.checked){
-            const uniqKeys = Array.from(new Set(keys));
-            const kept = uniqKeys[0] || '';
-            const count = keys.length; // total detected for that title
-            const suffix = count > 1 ? ` .${count}` : '';
-            rows.push(`${kept} | ${title}${suffix}`);
-          } else {
-            for(const k of keys){ rows.push(`${k} | ${title}`); }
-          }
-        }
-
-        if(elSort.checked){
-          rows.sort((a,b) => {
-            const at = a.split(' | ').slice(1).join(' | ').toLowerCase();
-            const bt = b.split(' | ').slice(1).join(' | ').toLowerCase();
-            return at.localeCompare(bt);
-          });
-        }
-        return rows.join('
-');
-      }
-          if(title){ entries.push({ title, key }); }
-        }
-
-        // Group by title to track duplicates/quantity
-        const byTitle = new Map();
-        for(const {title, key} of entries){
+        for(const {title, key} of found){
           if(!byTitle.has(title)) byTitle.set(title, []);
           byTitle.get(title).push(key);
         }
@@ -217,15 +212,6 @@
         elOut.parentElement.classList.add('highlight');
         setTimeout(()=>elOut.parentElement.classList.remove('highlight'), 700);
       }
-      
-      function autoResize(el){
-        if(!el) return;
-        el.style.height = 'auto';
-        const max = Math.max(240, Math.min(window.innerHeight * 0.8, el.scrollHeight + 8));
-        el.style.height = max + 'px';
-      }
-      
-      window.addEventListener('resize', () => { autoResize(elIn); autoResize(elOut); });
 
       async function copyOutput(showToast=true){
         try{
@@ -236,10 +222,10 @@
         }
       }
 
-      elIn.addEventListener('input', update);
+      elIn.addEventListener('input', () => { update(); });
       elDedupe.addEventListener('change', ()=>{update(); copyOutput(false);});
       elSort.addEventListener('change', ()=>{update(); copyOutput(false);});
-      elStrict.addEventListener('change', ()=>{update(); copyOutput(false);}); copyOutput(false);});
+      elStrict.addEventListener('change', ()=>{update(); copyOutput(false);});
 
       elCopy.addEventListener('click', copyOutput);
 
@@ -282,16 +268,17 @@ Steam will not provide extra giftable copies of games you already own.`;
         toast(`Auto-copied ${lines.length} line${lines.length===1?'':'s'}`);
         pulse(elOut);
       }, 0));
-        const lines = (elOut.textContent || '').split(/
-/).filter(Boolean);
-        await copyOutput(false);
-        toast(`Auto-copied ${lines.length} line${lines.length===1?'':'s'}`);
-        pulse(elOut);
-      }, 0));
+
+      function autoResize(el){
+        if(!el) return;
+        el.style.height = 'auto';
+        const max = Math.max(240, Math.min(window.innerHeight * 0.8, el.scrollHeight + 8));
+        el.style.height = max + 'px';
+      }
+      window.addEventListener('resize', () => { autoResize(elIn); autoResize(elOut); });
 
       function pulse(el){ el.classList.remove('pulseGlow'); void el.offsetWidth; el.classList.add('pulseGlow'); }
 
-      // tiny toast
       function toast(msg){
         const t = document.createElement('div');
         t.textContent = msg;
