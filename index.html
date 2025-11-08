@@ -31,7 +31,7 @@
     .grid { display: grid; grid-template-columns: 1fr; gap: 12px; }
     @media (min-width: 900px){ .grid { grid-template-columns: 1fr 1fr; } }
 
-    textarea, pre { width: 100%; height: 420px; padding: 14px 16px; resize: vertical; font: 12.5px/1.4 ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace; border: 1px solid rgba(255,255,255,.06); border-radius: 14px; background: #020305; color: var(--text); outline: none; transition: border-color .25s ease, box-shadow .25s ease, transform .1s ease; }
+    textarea, pre { width: 100%; min-height: 240px; height: auto; padding: 14px 16px; resize: none; font: 12.5px/1.4 ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace; border: 1px solid rgba(255,255,255,.06); border-radius: 14px; background: #03060b; color: var(--text); outline: none; transition: border-color .25s ease, box-shadow .25s ease, transform .1s ease; }
     textarea:focus { border-color: rgba(107,182,255,.65); box-shadow: 0 0 0 3px rgba(42,128,255,.25), 0 10px 30px rgba(0,0,0,.45); transform: translateY(-1px); }
     pre { white-space: pre-wrap; word-break: break-word; background: #03060b; position: relative; }
     pre::after{ content:""; position:absolute; inset:0; pointer-events:none; background:
@@ -117,8 +117,10 @@
       const WARNING = 'Steam will not provide extra giftable copies of games you already own.';
 
       function parse(input){
-        const lines = input.split(/\r?\n/).map(s => s.trim());
-        const results = [];
+        const lines = input.split(/
+?
+/).map(s => s.trim());
+        const entries = [];
         const keyRegexStrict = /^[A-Z0-9]{5}-[A-Z0-9]{5}-[A-Z0-9]{5}$/;
         const keyRegexLoose = /^[A-Z0-9]{4,5}-[A-Z0-9]{4,5}-[A-Z0-9]{4,5}$/; // toggleable
         const keyRegex = elStrict.checked ? keyRegexStrict : keyRegexLoose;
@@ -139,31 +141,91 @@
             if(/^steam key$/i.test(t)) continue;
             title = t; break;
           }
-          if(title){ results.push({ title, key }); }
+          if(title){ entries.push({ title, key }); }
         }
 
-        // post-process: dedupe and sort
-        let pairs = results.map(r => `${r.key} | ${r.title}`);
-        if(elDedupe.checked){
-          const seen = new Set();
-          pairs = pairs.filter(line => (seen.has(line) ? false : (seen.add(line), true)));
+        // Group by title to track duplicates/quantity
+        const byTitle = new Map();
+        for(const {title, key} of entries){
+          if(!byTitle.has(title)) byTitle.set(title, []);
+          byTitle.get(title).push(key);
         }
+
+        // Build output
+        let rows = [];
+        for(const [title, keys] of byTitle){
+          if(elDedupe.checked){
+            const uniqKeys = Array.from(new Set(keys));
+            const kept = uniqKeys[0] || '';
+            const count = keys.length; // total detected for that title
+            const suffix = count > 1 ? ` .${count}` : '';
+            rows.push(`${kept} | ${title}${suffix}`);
+          } else {
+            for(const k of keys){ rows.push(`${k} | ${title}`); }
+          }
+        }
+
         if(elSort.checked){
-          pairs.sort((a,b) => {
+          rows.sort((a,b) => {
             const at = a.split(' | ').slice(1).join(' | ').toLowerCase();
             const bt = b.split(' | ').slice(1).join(' | ').toLowerCase();
             return at.localeCompare(bt);
           });
         }
-        return pairs.join('\n');
+        return rows.join('
+');
+      }
+          if(title){ entries.push({ title, key }); }
+        }
+
+        // Group by title to track duplicates/quantity
+        const byTitle = new Map();
+        for(const {title, key} of entries){
+          if(!byTitle.has(title)) byTitle.set(title, []);
+          byTitle.get(title).push(key);
+        }
+
+        // Build output
+        let rows = [];
+        for(const [title, keys] of byTitle){
+          if(elDedupe.checked){
+            const uniqKeys = Array.from(new Set(keys));
+            const kept = uniqKeys[0] || '';
+            const count = keys.length; // total detected for that title
+            const suffix = count > 1 ? ` .${count}` : '';
+            rows.push(`${kept} | ${title}${suffix}`);
+          } else {
+            for(const k of keys){ rows.push(`${k} | ${title}`); }
+          }
+        }
+
+        if(elSort.checked){
+          rows.sort((a,b) => {
+            const at = a.split(' | ').slice(1).join(' | ').toLowerCase();
+            const bt = b.split(' | ').slice(1).join(' | ').toLowerCase();
+            return at.localeCompare(bt);
+          });
+        }
+        return rows.join('
+');
       }
 
       function update(){
         elOut.textContent = parse(elIn.value);
-        // output highlight animation
+        autoResize(elIn);
+        autoResize(elOut);
         elOut.parentElement.classList.add('highlight');
         setTimeout(()=>elOut.parentElement.classList.remove('highlight'), 700);
       }
+      
+      function autoResize(el){
+        if(!el) return;
+        el.style.height = 'auto';
+        const max = Math.max(240, Math.min(window.innerHeight * 0.8, el.scrollHeight + 8));
+        el.style.height = max + 'px';
+      }
+      
+      window.addEventListener('resize', () => { autoResize(elIn); autoResize(elOut); });
 
       async function copyOutput(showToast=true){
         try{
@@ -177,7 +239,7 @@
       elIn.addEventListener('input', update);
       elDedupe.addEventListener('change', ()=>{update(); copyOutput(false);});
       elSort.addEventListener('change', ()=>{update(); copyOutput(false);});
-      elStrict.addEventListener('change', ()=>{update(); copyOutput(false);});
+      elStrict.addEventListener('change', ()=>{update(); copyOutput(false);}); copyOutput(false);});
 
       elCopy.addEventListener('click', copyOutput);
 
@@ -191,7 +253,20 @@
       });
 
       elExample.addEventListener('click', () => {
-        elIn.value = `Operation Wolf Returns: First Mission\n7M90A-LN00T-3W9WL\nRedeem\nSteam will not provide extra giftable copies of games you already own.\n\nAsterix & Obelix Slap them All! 2\n8FGY6-R2XBT-QZX20\nRedeem\nSteam will not provide extra giftable copies of games you already own.\n\nGrand Mountain Adventure: Wonderlands\n959PG-RA0RI-NRZYM\nRedeem\nSteam will not provide extra giftable copies of games you already own.`;
+        elIn.value = `Operation Wolf Returns: First Mission
+7M90A-LN00T-3W9WL
+Redeem
+Steam will not provide extra giftable copies of games you already own.
+
+Asterix & Obelix Slap them All! 2
+8FGY6-R2XBT-QZX20
+Redeem
+Steam will not provide extra giftable copies of games you already own.
+
+Grand Mountain Adventure: Wonderlands
+959PG-RA0RI-NRZYM
+Redeem
+Steam will not provide extra giftable copies of games you already own.`;
         update();
         copyOutput();
         pulse(card);
@@ -200,7 +275,15 @@
       // Auto-parse and auto-copy on paste
       elIn.addEventListener('paste', () => setTimeout(async () => {
         update();
-        const lines = (elOut.textContent || '').split(/\n/).filter(Boolean);
+        const lines = (elOut.textContent || '').split(/
+?
+/).filter(Boolean);
+        await copyOutput(false);
+        toast(`Auto-copied ${lines.length} line${lines.length===1?'':'s'}`);
+        pulse(elOut);
+      }, 0));
+        const lines = (elOut.textContent || '').split(/
+/).filter(Boolean);
         await copyOutput(false);
         toast(`Auto-copied ${lines.length} line${lines.length===1?'':'s'}`);
         pulse(elOut);
