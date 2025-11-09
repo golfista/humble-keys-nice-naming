@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Steam Key Formatter for ASF — v1.0</title>
+  <title>Steam Key Formatter for ASF — v1.01</title>
   <style>
     :root { --bg:#000000; --card:#070b10; --muted:#9db4c8; --text:#eaf4ff; --accent:#6bb6ff; --accent-2:#2a80ff; }
     * { box-sizing: border-box; }
@@ -75,7 +75,7 @@
   <div class="wrap">
     <div class="header">
       <div>
-        <h1>Steam Key Formatter for ASF <span class="version">v1.0</span> → <span class="small">Steam style</span></h1>
+        <h1>Steam Key Formatter for ASF <span class="version">v1.01</span> → <span class="small">Steam style</span></h1>
         <div class="hint">Paste Humble or Fanatical text on the left. The right side outputs <code>KEY | Title</code>. All local (no uploads).</div>
       </div>
       <button id="exampleBtn" class="btn" title="Load example">Load example</button>
@@ -130,23 +130,29 @@
         return s;
       }
 
-      // Boilerplate to ignore as titles (Humble + Fanatical)
+      // Lines to ignore as titles (Humble + Fanatical)
       function isBoiler(s){
         if(!s) return true;
+
         // Humble
         if(/^redeem$/i.test(s)) return true;
         if(/steam will not provide extra giftable copies/i.test(s)) return true;
         if(/^steam key$/i.test(s)) return true;
         if(/^copy$/i.test(s)) return true;
-        // Fanatical
-        if(/^product cover for\b/i.test(s)) return true;          // label line
+
+        // Fanatical common UI noise
+        if(/^product cover for\b/i.test(s)) return true;       // label line
         if(/^steam logo$/i.test(s)) return true;
         if(/^how do i redeem my key\??$/i.test(s)) return true;
-        if(/^open product details$/i.test(s)) return true;        // extra UI line
+        if(/^open product details$/i.test(s)) return true;
         if(/^view key$/i.test(s)) return true;
         if(/^reveal key$/i.test(s)) return true;
-        if(/^copy key$/i.test(s)) return true;
-        if(/^build your own.*bundle$/i.test(s)) return true;      // bundle headers
+
+        // Bundle headings / metadata
+        if(/^build your own.*bundle$/i.test(s)) return true;
+        if(/^bundle:\s*/i.test(s)) return true;                // e.g., "Bundle: Mystery Game Bundle - 1 Game"
+        if(/^purchased:\s*/i.test(s)) return true;             // e.g., "Purchased: November 08, 2025"
+
         return false;
       }
 
@@ -166,16 +172,16 @@
 
         const lines = raw.split(/\r?\n/).map(s => s.trim());
 
-        // Find title up to N lines above key (prevents far-away grabs)
+        // Look back up to N lines to find the title closest to the key
         const MAX_BACK = 6;
         function titleAbove(idx){
           let fallback = '';
-          for(let j = idx - 1, steps=0; j >= 0 && steps < MAX_BACK; j--, steps++){
+          for(let j = idx - 1, steps = 0; j >= 0 && steps < MAX_BACK; j--, steps++){
             const t = lines[j];
             if(!t) continue;
             if(/^product cover for\b/i.test(t) && !fallback) fallback = coverNameFrom(t);
             if(isBoiler(t)) continue;
-            return t;
+            return t; // first non-boilerplate upward
           }
           return fallback;
         }
@@ -240,7 +246,7 @@
       }
 
       // events
-      elIn.addEventListener('input', () => { update(); /* no auto-copy while typing */ });
+      elIn.addEventListener('input', () => { update(); });
       elDedupe.addEventListener('change', ()=>{ update(); copyOutput(false); });
       elSort.addEventListener('change',   ()=>{ update(); copyOutput(false); });
       elStrict.addEventListener('change', ()=>{ update(); copyOutput(false); });
@@ -258,27 +264,37 @@
 
       elExample.addEventListener('click', () => {
         elIn.value =
-`Build your own Tower Defense Bundle
-Product cover for Compadrone: Land Wars
-Compadrone: Land Wars
+`Kardboard Kings: Card Shop Simulator
+Bundle: Mystery Game Bundle - 1 Game
+Purchased: November 08, 2025
 steam logo
-P3GBH-LKBQT-6IPPV
+Open product details
+0IJVV-0YXYE-FHP86
 How Do I Redeem My Key?
-Product cover for DG2: Defense Grid 2
-DG2: Defense Grid 2
+Product cover for Tech Support: Error Unknown
+Tech Support: Error Unknown
+Bundle: Mystery Game Bundle - 1 Game
+Purchased: November 08, 2025
 steam logo
-GWH6X-P2PE8-VHNQA
+Open product details
+L7ZM2-QDV6G-WQ3VP
 How Do I Redeem My Key?
-Product cover for Everwarder
-Everwarder
+Product cover for Pure Farming 2018 Deluxe
+Pure Farming 2018 Deluxe
+Bundle: Mystery Game Bundle - 1 Game
+Purchased: November 08, 2025
 steam logo
-0Y4YR-3J4FJ-EEI32
+Open product details
+7Z4XE-3XE7R-W5QYY
 How Do I Redeem My Key?
-
-Operation Wolf Returns: First Mission
-7M90A-LN00T-3W9WL
-Redeem
-Steam will not provide extra giftable copies of games you already own.`;
+Product cover for Chaos on Deponia
+Chaos on Deponia
+Bundle: Mystery Game Bundle - 1 Game
+Purchased: November 08, 2025
+steam logo
+Open product details
+95HPB-AJ6LW-7HK4P
+How Do I Redeem My Key?`;
         update(); pulse(card);
       });
 
