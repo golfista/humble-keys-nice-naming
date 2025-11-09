@@ -47,7 +47,7 @@
 
     .btn { position:relative; padding:10px 14px; border-radius:12px; border:1px solid rgba(107,182,255,.35);
       background:linear-gradient(180deg, rgba(42,128,255,.25), rgba(42,128,255,.15)); color:var(--text);
-      cursor:pointer; font-weight:700; letter-spacing:.2px; transition:transform .12s ease, box-shadow .25s ease, filter .25s ease; }
+      cursor:pointer; font-weight:700; letter-spacing:.2px; transition: transform .12s ease, box-shadow .25s ease, filter .25s ease; }
     .btn::before{ content:""; position:absolute; inset:-2px; border-radius:14px;
       background:radial-gradient(60% 60% at 50% -20%, rgba(107,182,255,.6), transparent 60%); filter:blur(12px);
       opacity:.45; z-index:-1; transition:opacity .25s ease; }
@@ -57,8 +57,8 @@
     .pill { display:inline-flex; align-items:center; gap:8px; padding:8px 10px; border-radius:999px;
       border:1px solid rgba(255,255,255,.12); background:rgba(12,18,26,.9); font-size:12px; color:var(--muted);
       transition:border-color .25s ease, background .25s ease; }
-    .pill:hover { border-color:rgba(107,182,255,.45); background:rgba(12,18,26,1); }
-    .pill input { accent-color:var(--accent); }
+    .pill:hover { border-color: rgba(107,182,255,.45); background: rgba(12,18,26,1); }
+    .pill input { accent-color: var(--accent); }
 
     .hint { color:var(--muted); font-size:12px; }
     .header { display:flex; justify-content:space-between; align-items:end; gap:16px; margin-bottom:12px; }
@@ -76,7 +76,7 @@
     <div class="header">
       <div>
         <h1>Steam Key Formatter for ASF <span class="version">v1.0</span> → <span class="small">Steam style</span></h1>
-        <div class="hint">Paste Humble or Fanatical page text on the left. The right side outputs <code>KEY | Title</code>. Everything runs locally.</div>
+        <div class="hint">Paste Humble or Fanatical text on the left. The right side outputs <code>KEY | Title</code>. All local (no uploads).</div>
       </div>
       <button id="exampleBtn" class="btn" title="Load example">Load example</button>
     </div>
@@ -104,7 +104,7 @@
     </div>
 
     <div class="footer">
-      <div>We detect keys like <em>XXXXX-XXXXX-XXXXX</em>. Title = nearest non-boilerplate line above the key. Fanatical “Product cover for …”, “steam logo”, and “How Do I Redeem My Key?” are ignored; bundle headings are skipped.</div>
+      <div>Keys like <em>XXXXX-XXXXX-XXXXX</em> are detected. Title = nearest non-boilerplate line above the key (Fanatical noise removed).</div>
     </div>
   </div>
 
@@ -130,6 +130,7 @@
         return s;
       }
 
+      // Boilerplate to ignore as titles (Humble + Fanatical)
       function isBoiler(s){
         if(!s) return true;
         // Humble
@@ -138,10 +139,14 @@
         if(/^steam key$/i.test(s)) return true;
         if(/^copy$/i.test(s)) return true;
         // Fanatical
+        if(/^product cover for\b/i.test(s)) return true;          // label line
         if(/^steam logo$/i.test(s)) return true;
         if(/^how do i redeem my key\??$/i.test(s)) return true;
-        if(/^build your own.*bundle$/i.test(s)) return true;       // bundle headers
-        if(/^product cover for\b/i.test(s)) return true;           // label line (not a title)
+        if(/^open product details$/i.test(s)) return true;        // extra UI line
+        if(/^view key$/i.test(s)) return true;
+        if(/^reveal key$/i.test(s)) return true;
+        if(/^copy key$/i.test(s)) return true;
+        if(/^build your own.*bundle$/i.test(s)) return true;      // bundle headers
         return false;
       }
 
@@ -161,10 +166,11 @@
 
         const lines = raw.split(/\r?\n/).map(s => s.trim());
 
-        // find a title above a given index; prefer non-boilerplate; keep nearest cover name as fallback
+        // Find title up to N lines above key (prevents far-away grabs)
+        const MAX_BACK = 6;
         function titleAbove(idx){
           let fallback = '';
-          for(let j = idx - 1; j >= 0; j--){
+          for(let j = idx - 1, steps=0; j >= 0 && steps < MAX_BACK; j--, steps++){
             const t = lines[j];
             if(!t) continue;
             if(/^product cover for\b/i.test(t) && !fallback) fallback = coverNameFrom(t);
@@ -174,7 +180,6 @@
           return fallback;
         }
 
-        // collect keys line-by-line
         function collect(regex){
           const found = [];
           for(let i=0;i<lines.length;i++){
@@ -192,7 +197,7 @@
         if(found.length === 0 && useStrict) found = collect(looseRe);
         if(found.length === 0) return '';
 
-        // group by title
+        // Group by title
         const byTitle = new Map();
         for(const {title, key} of found){
           if(!byTitle.has(title)) byTitle.set(title, []);
@@ -235,7 +240,7 @@
       }
 
       // events
-      elIn.addEventListener('input', () => { update(); copyOutput(false); });
+      elIn.addEventListener('input', () => { update(); /* no auto-copy while typing */ });
       elDedupe.addEventListener('change', ()=>{ update(); copyOutput(false); });
       elSort.addEventListener('change',   ()=>{ update(); copyOutput(false); });
       elStrict.addEventListener('change', ()=>{ update(); copyOutput(false); });
@@ -274,7 +279,7 @@ Operation Wolf Returns: First Mission
 7M90A-LN00T-3W9WL
 Redeem
 Steam will not provide extra giftable copies of games you already own.`;
-        update(); copyOutput(); pulse(card);
+        update(); pulse(card);
       });
 
       // parse after paste lands, then auto-copy
