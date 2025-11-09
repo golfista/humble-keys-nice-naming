@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Humble/Fanatical Key Formatter</title>
+  <title>Steam Key Formatter for ASF — v1.0</title>
   <style>
     :root { --bg:#000000; --card:#070b10; --muted:#9db4c8; --text:#eaf4ff; --accent:#6bb6ff; --accent-2:#2a80ff; }
     * { box-sizing: border-box; }
@@ -13,13 +13,13 @@
       content:""; position:fixed; inset:-20vmax; pointer-events:none;
       background: radial-gradient(30vmax 20vmax at 85% -10%, rgba(38,119,255,.25), transparent 60%),
                   radial-gradient(22vmax 16vmax at 10% 110%, rgba(38,119,255,.18), transparent 60%);
-      filter: blur(40px) saturate(120%);
-      animation: drift 18s ease-in-out infinite alternate; z-index:-1;
+      filter: blur(40px) saturate(120%); animation: drift 18s ease-in-out infinite alternate; z-index:-1;
     }
     @keyframes drift { from { transform: translate3d(-2%, -1%, 0) scale(1); } to { transform: translate3d(2%, 1%, 0) scale(1.03); } }
 
     .wrap { max-width: 980px; margin: 40px auto; padding: 0 16px; }
     h1 { font-size: 1.6rem; margin: 0 0 10px; letter-spacing: .3px; }
+    .version { font-size:.9rem; color:var(--muted); margin-left:.4rem }
 
     .card { background: linear-gradient(180deg, rgba(255,255,255,.02), rgba(255,255,255,.01));
             border: 1px solid rgba(255,255,255,.06); border-radius: 18px;
@@ -30,44 +30,44 @@
     .row { display:grid; grid-template-columns: 1fr; gap:14px; padding:16px; }
     @media (min-width: 900px){ .row { grid-template-columns: 1fr 1fr; } }
 
-    textarea, pre { width: 100%; min-height: 240px; height: auto; padding: 14px 16px; resize: none;
-      font: 12.5px/1.4 ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
-      border: 1px solid rgba(255,255,255,.06); border-radius: 14px; background:#03060b; color:var(--text);
-      outline: none; transition: border-color .25s ease, box-shadow .25s ease, transform .1s ease; }
-    textarea:focus { border-color: rgba(107,182,255,.65); box-shadow: 0 0 0 3px rgba(42,128,255,.25), 0 10px 30px rgba(0,0,0,.45); transform: translateY(-1px); }
-    pre { white-space: pre-wrap; word-break: break-word; position: relative; }
-    pre::after{ content:""; position:absolute; inset:0; pointer-events:none; background:
-      linear-gradient(90deg, rgba(42,128,255,.06), transparent 20%, transparent 80%, rgba(42,128,255,.06));
-      opacity:0; transition: opacity .6s ease; }
-    .highlight pre::after{ opacity:1; animation: shimmer 1.2s ease; }
+    textarea, pre { width:100%; min-height:240px; height:auto; padding:14px 16px; resize:none;
+      font:12.5px/1.4 ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;
+      border:1px solid rgba(255,255,255,.06); border-radius:14px; background:#03060b; color:var(--text);
+      outline:none; transition:border-color .25s ease, box-shadow .25s ease, transform .1s ease; }
+    textarea:focus { border-color:rgba(107,182,255,.65); box-shadow:0 0 0 3px rgba(42,128,255,.25), 0 10px 30px rgba(0,0,0,.45); transform:translateY(-1px); }
+    pre { white-space:pre-wrap; word-break:break-word; position:relative; }
+    pre::after{ content:""; position:absolute; inset:0; pointer-events:none;
+      background:linear-gradient(90deg, rgba(42,128,255,.06), transparent 20%, transparent 80%, rgba(42,128,255,.06));
+      opacity:0; transition:opacity .6s ease; }
+    .highlight pre::after{ opacity:1; animation:shimmer 1.2s ease; }
     @keyframes shimmer { from{ background-position:-100% 0; } to{ background-position:200% 0; } }
 
     .controls { display:flex; flex-wrap:wrap; gap:8px 14px; align-items:center; padding:12px 16px;
       border-top:1px solid rgba(255,255,255,.06); background: rgba(12,18,26,.6); }
 
     .btn { position:relative; padding:10px 14px; border-radius:12px; border:1px solid rgba(107,182,255,.35);
-      background: linear-gradient(180deg, rgba(42,128,255,.25), rgba(42,128,255,.15)); color:var(--text);
-      cursor:pointer; font-weight:700; letter-spacing:.2px; transition: transform .12s ease, box-shadow .25s ease, filter .25s ease; }
+      background:linear-gradient(180deg, rgba(42,128,255,.25), rgba(42,128,255,.15)); color:var(--text);
+      cursor:pointer; font-weight:700; letter-spacing:.2px; transition:transform .12s ease, box-shadow .25s ease, filter .25s ease; }
     .btn::before{ content:""; position:absolute; inset:-2px; border-radius:14px;
-      background: radial-gradient(60% 60% at 50% -20%, rgba(107,182,255,.6), transparent 60%); filter: blur(12px);
-      opacity:.45; z-index:-1; transition: opacity .25s ease; }
-    .btn:hover { box-shadow: 0 10px 30px rgba(42,128,255,.25); transform: translateY(-1px); }
-    .btn:active { transform: translateY(0); filter: brightness(.96); }
+      background:radial-gradient(60% 60% at 50% -20%, rgba(107,182,255,.6), transparent 60%); filter:blur(12px);
+      opacity:.45; z-index:-1; transition:opacity .25s ease; }
+    .btn:hover { box-shadow:0 10px 30px rgba(42,128,255,.25); transform:translateY(-1px); }
+    .btn:active { transform:translateY(0); filter:brightness(.96); }
 
     .pill { display:inline-flex; align-items:center; gap:8px; padding:8px 10px; border-radius:999px;
       border:1px solid rgba(255,255,255,.12); background:rgba(12,18,26,.9); font-size:12px; color:var(--muted);
       transition:border-color .25s ease, background .25s ease; }
-    .pill:hover { border-color: rgba(107,182,255,.45); background: rgba(12,18,26,1); }
-    .pill input { accent-color: var(--accent); }
+    .pill:hover { border-color:rgba(107,182,255,.45); background:rgba(12,18,26,1); }
+    .pill input { accent-color:var(--accent); }
 
     .hint { color:var(--muted); font-size:12px; }
     .header { display:flex; justify-content:space-between; align-items:end; gap:16px; margin-bottom:12px; }
     .footer { margin-top:12px; color:var(--muted); font-size:12px; }
     .small { font-size:11.5px; color:var(--muted); }
-    .kbd { border:1px solid rgba(255,255,255,.16); background:rgba(255,255,255,.06); border-radius:6px; padding:2px 6px; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace; }
+    .kbd { border:1px solid rgba(255,255,255,.16); background:rgba(255,255,255,.06); border-radius:6px; padding:2px 6px; font-family: ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace; }
     .sr { position:absolute; left:-10000px; top:auto; width:1px; height:1px; overflow:hidden; }
 
-    .pulseGlow { box-shadow: 0 0 0 0 rgba(42,128,255,.45); animation: pulse 1.8s ease-out 2; }
+    .pulseGlow { box-shadow:0 0 0 0 rgba(42,128,255,.45); animation:pulse 1.8s ease-out 2; }
     @keyframes pulse { 0%{ box-shadow:0 0 0 0 rgba(42,128,255,.55);} 70%{ box-shadow:0 0 0 18px rgba(42,128,255,0);} 100%{ box-shadow:0 0 0 0 rgba(42,128,255,0);} }
   </style>
 </head>
@@ -75,8 +75,8 @@
   <div class="wrap">
     <div class="header">
       <div>
-        <h1>Humble / Fanatical Key Formatter → <span class="small">Steam style</span></h1>
-        <div class="hint">Paste your page text on the left. The right side outputs <code>KEY | Title</code>. All local—no network.</div>
+        <h1>Steam Key Formatter for ASF <span class="version">v1.0</span> → <span class="small">Steam style</span></h1>
+        <div class="hint">Paste Humble or Fanatical page text on the left. The right side outputs <code>KEY | Title</code>. Everything runs locally.</div>
       </div>
       <button id="exampleBtn" class="btn" title="Load example">Load example</button>
     </div>
@@ -85,7 +85,7 @@
       <div class="row">
         <div>
           <label class="sr" for="input">Input</label>
-          <textarea id="input" placeholder="Paste Humble or Fanatical keys block here…"></textarea>
+          <textarea id="input" placeholder="Paste keys block here…"></textarea>
         </div>
         <div>
           <label class="sr" for="output">Output</label>
@@ -104,7 +104,7 @@
     </div>
 
     <div class="footer">
-      <div>We detect keys like <em>XXXXX-XXXXX-XXXXX</em>. Title = nearest non-boilerplate line above the key. Fanatical “Product cover for …” is ignored unless it’s the only title we can find.</div>
+      <div>We detect keys like <em>XXXXX-XXXXX-XXXXX</em>. Title = nearest non-boilerplate line above the key. Fanatical “Product cover for …”, “steam logo”, and “How Do I Redeem My Key?” are ignored; bundle headings are skipped.</div>
     </div>
   </div>
 
@@ -124,29 +124,27 @@
       function normalizeInput(s){
         if(!s) return '';
         s = s.normalize('NFKC');
-        s = s.replace(/[\u2010-\u2015\u2212\u2043]/g, '-'); // Unicode dashes → '-'
-        s = s.replace(/[\u200B-\u200D\uFEFF]/g, '');       // zero-width & BOM
+        s = s.replace(/[\u2010-\u2015\u2212\u2043]/g, '-'); // unicode dashes → '-'
+        s = s.replace(/[\u200B-\u200D\uFEFF]/g, '');       // zero-width + BOM
         s = s.replace(/\u00A0/g, ' ');                    // nbsp → space
         return s;
       }
 
-      // Boilerplate lines to skip as titles
       function isBoiler(s){
         if(!s) return true;
-        // Humble common lines
-        if (/^redeem$/i.test(s)) return true;
-        if (/steam will not provide extra giftable copies/i.test(s)) return true;
-        if (/^steam key$/i.test(s)) return true;
-        if (/^copy$/i.test(s)) return true;
-        // Fanatical common lines
-        if (/^steam logo$/i.test(s)) return true;
-        if (/^how do i redeem my key\??$/i.test(s)) return true;
-        if (/^build your own.*bundle$/i.test(s)) return true; // bundle headers
-        if (/^product cover for\b/i.test(s)) return true;      // label line
+        // Humble
+        if(/^redeem$/i.test(s)) return true;
+        if(/steam will not provide extra giftable copies/i.test(s)) return true;
+        if(/^steam key$/i.test(s)) return true;
+        if(/^copy$/i.test(s)) return true;
+        // Fanatical
+        if(/^steam logo$/i.test(s)) return true;
+        if(/^how do i redeem my key\??$/i.test(s)) return true;
+        if(/^build your own.*bundle$/i.test(s)) return true;       // bundle headers
+        if(/^product cover for\b/i.test(s)) return true;           // label line (not a title)
         return false;
       }
 
-      // If we need a fallback when only "Product cover for X" exists
       function coverNameFrom(line){
         const m = /^product cover for\s*(.+)$/i.exec(line || '');
         return m ? m[1].trim() : '';
@@ -163,7 +161,7 @@
 
         const lines = raw.split(/\r?\n/).map(s => s.trim());
 
-        // helper: find title above an index; prefer non-boilerplate; remember nearest "Product cover for ..." as fallback
+        // find a title above a given index; prefer non-boilerplate; keep nearest cover name as fallback
         function titleAbove(idx){
           let fallback = '';
           for(let j = idx - 1; j >= 0; j--){
@@ -176,7 +174,7 @@
           return fallback;
         }
 
-        // collect keys line-by-line (works for both sites)
+        // collect keys line-by-line
         function collect(regex){
           const found = [];
           for(let i=0;i<lines.length;i++){
@@ -185,17 +183,13 @@
             if(matches.length === 0) continue;
             const title = titleAbove(i);
             if(!title) continue;
-            for(const k of matches){
-              found.push({ title, key: k.toUpperCase() });
-            }
+            for(const k of matches) found.push({ title, key: k.toUpperCase() });
           }
           return found;
         }
 
         let found = collect(keyRe);
-        if(found.length === 0 && useStrict){
-          found = collect(looseRe);
-        }
+        if(found.length === 0 && useStrict) found = collect(looseRe);
         if(found.length === 0) return '';
 
         // group by title
@@ -259,33 +253,27 @@
 
       elExample.addEventListener('click', () => {
         elIn.value =
-`Operation Wolf Returns: First Mission
-7M90A-LN00T-3W9WL
-Redeem
-Steam will not provide extra giftable copies of games you already own.
-
-Asterix & Obelix Slap them All! 2
-8FGY6-R2XBT-QZX20
-Redeem
-Steam will not provide extra giftable copies of games you already own.
-
-Grand Mountain Adventure: Wonderlands
-959PG-RA0RI-NRZYM
-Redeem
-Steam will not provide extra giftable copies of games you already own.
-
-Build your own Tower Defense Bundle
+`Build your own Tower Defense Bundle
 Product cover for Compadrone: Land Wars
 Compadrone: Land Wars
 steam logo
 P3GBH-LKBQT-6IPPV
 How Do I Redeem My Key?
-
 Product cover for DG2: Defense Grid 2
 DG2: Defense Grid 2
 steam logo
 GWH6X-P2PE8-VHNQA
-How Do I Redeem My Key?`;
+How Do I Redeem My Key?
+Product cover for Everwarder
+Everwarder
+steam logo
+0Y4YR-3J4FJ-EEI32
+How Do I Redeem My Key?
+
+Operation Wolf Returns: First Mission
+7M90A-LN00T-3W9WL
+Redeem
+Steam will not provide extra giftable copies of games you already own.`;
         update(); copyOutput(); pulse(card);
       });
 
@@ -311,7 +299,7 @@ How Do I Redeem My Key?`;
       function toast(msg){
         const t = document.createElement('div');
         t.textContent = msg;
-        t.style.position='fixed'; right='16px'; t.style.right='16px'; t.style.bottom='16px';
+        t.style.position='fixed'; t.style.right='16px'; t.style.bottom='16px';
         t.style.padding='10px 12px'; t.style.borderRadius='12px';
         t.style.background='linear-gradient(180deg, rgba(42,128,255,.9), rgba(42,128,255,.75))';
         t.style.color='white'; t.style.fontSize='12.5px';
