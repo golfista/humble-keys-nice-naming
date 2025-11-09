@@ -9,12 +9,13 @@
     * { box-sizing: border-box; }
     html,body { height: 100%; }
     body { margin:0; font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial, "Noto Sans", "Apple Color Emoji", "Segoe UI Emoji"; background: #000; color: var(--text); }
-    body::before{
+    body::before{ /* soft animated blue aura */
       content:""; position:fixed; inset:-20vmax; pointer-events:none;
       background: radial-gradient(30vmax 20vmax at 85% -10%, rgba(38,119,255,.25), transparent 60%),
                   radial-gradient(22vmax 16vmax at 10% 110%, rgba(38,119,255,.18), transparent 60%);
       filter: blur(40px) saturate(120%);
-      animation: drift 18s ease-in-out infinite alternate; z-index:-1;
+      animation: drift 18s ease-in-out infinite alternate;
+      z-index:-1;
     }
     @keyframes drift { from { transform: translate3d(-2%, -1%, 0) scale(1); } to { transform: translate3d(2%, 1%, 0) scale(1.03); } }
 
@@ -33,7 +34,9 @@
     textarea, pre { width: 100%; min-height: 240px; height: auto; padding: 14px 16px; resize: none; font: 12.5px/1.4 ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace; border: 1px solid rgba(255,255,255,.06); border-radius: 14px; background: #03060b; color: var(--text); outline: none; transition: border-color .25s ease, box-shadow .25s ease, transform .1s ease; }
     textarea:focus { border-color: rgba(107,182,255,.65); box-shadow: 0 0 0 3px rgba(42,128,255,.25), 0 10px 30px rgba(0,0,0,.45); transform: translateY(-1px); }
     pre { white-space: pre-wrap; word-break: break-word; background: #03060b; position: relative; }
-    pre::after{ content:""; position:absolute; inset:0; pointer-events:none; background: linear-gradient(90deg, rgba(42,128,255,.06), transparent 20%, transparent 80%, rgba(42,128,255,.06)); opacity:0; transition: opacity .6s ease; }
+    pre::after{ content:""; position:absolute; inset:0; pointer-events:none; background:
+      linear-gradient(90deg, rgba(42,128,255,.06), transparent 20%, transparent 80%, rgba(42,128,255,.06));
+      opacity:0; transition: opacity .6s ease; }
     .highlight pre::after{ opacity:1; animation: shimmer 1.2s ease; }
     @keyframes shimmer { from{ background-position:-100% 0; } to{ background-position:200% 0; } }
 
@@ -68,7 +71,7 @@
     <div class="header">
       <div>
         <h1>Humble Key Formatter → <span class="small">Steam style</span></h1>
-        <div class="hint">Paste your Humble Bundle page text on the left. The right side will output <code>KEY | Title</code> pairs. Works fully client-side (no uploads).</div>
+        <div class="hint">Paste your Humble Bundle page text on the left. The right side will output <code>KEY | Title</code> pairs. Works fully client‑side (no uploads).</div>
       </div>
       <button id="exampleBtn" class="btn" title="Load example">Load example</button>
     </div>
@@ -87,6 +90,7 @@
       <div class="controls">
         <button id="copyBtn" class="btn">Copy output</button>
         <button id="downloadBtn" class="btn">Download .txt</button>
+        <button id="processBtn" class="btn" title="Force format the current text">Process</button>
         <label class="pill"><input id="dedupe" type="checkbox" checked /> Remove duplicates</label>
         <label class="pill"><input id="sort" type="checkbox" /> Sort A→Z by title</label>
         <label class="pill"><input id="steamOnly" type="checkbox" checked /> Strict Steam key format (5-5-5)</label>
@@ -105,85 +109,92 @@
       const elOut = document.getElementById('output');
       const elCopy = document.getElementById('copyBtn');
       const elDownload = document.getElementById('downloadBtn');
+      const elProcess = document.getElementById('processBtn');
       const elDedupe = document.getElementById('dedupe');
       const elSort = document.getElementById('sort');
       const elStrict = document.getElementById('steamOnly');
       const elExample = document.getElementById('exampleBtn');
       const card = document.querySelector('.card');
 
+      // Normalize pasted Humble text (dashes, zero-width chars, NBSP, etc.)
       function normalizeInput(s){
         if(!s) return '';
         s = s.normalize('NFKC');
-        s = s.replace(/[\u2010-\u2015\u2212\u2043]/g, '-'); // unicode dashes → '-'
-        s = s.replace(/[\u200B-\u200D\uFEFF]/g, '');       // zero-width & BOM
-        s = s.replace(/\u00A0/g, ' ');                    // nbsp → space
+        // Replace various unicode dashes with ASCII hyphen
+        s = s.replace(/[‐-―−⁃]/g, '-');
+        // Remove zero-width and BOM
+        s = s.replace(/[​-‍﻿]/g, '');
+        // NBSP -> space
+        s = s.replace(/ /g, ' ');
         return s;
       }
 
       function parse(input){
         const raw = normalizeInput(input);
-        if(!raw.trim()) return '';
+        const lines = raw.split(/
+?
+/).map(s => s.trim());
+        const entries = [];
 
-        const strictRe = /\b([A-Z0-9]{5}-[A-Z0-9]{5}-[A-Z0-9]{5})\b/g;
-        const looseRe  = /\b([A-Z0-9]{4,5}-[A-Z0-9]{4,5}-[A-Z0-9]{4,5})\b/g;
+        const strictRe = /^[A-Z0-9]{5}-[A-Z0-9]{5}-[A-Z0-9]{5}$/;
+        const looseRe  = /^[A-Z0-9]{4,5}-[A-Z0-9]{4,5}-[A-Z0-9]{4,5}$/;
         const useStrict = elStrict.checked;
-        const keyRe = useStrict ? strictRe : looseRe;
+        const keyRegex = useStrict ? strictRe : looseRe;
 
-        // Split by blank lines (one game per block typically)
-        const blocks = raw.split(/\r?\n\s*\r?\n+/);
-        const found = [];
-
+        // Helper: decide if a line is boilerplate we should skip when finding titles
         function isBoiler(s){
           if(!s) return true;
           if(/^redeem$/i.test(s)) return true;
           if(/steam will not provide extra giftable copies/i.test(s)) return true;
           if(/^steam key$/i.test(s)) return true;
           if(/^copy$/i.test(s)) return true;
+          // Fanatical boilerplate
+          if(/^product cover for/i.test(s)) return true;
+          if(/^steam logo$/i.test(s)) return true;
+          if(/^how do i redeem my key\??$/i.test(s)) return true;
+          if(/^build your own/i.test(s)) return true;
+          if(/bundle$/i.test(s)) return true; // lines ending with 'Bundle'
           return false;
         }
 
-        // Pass 1: parse each block
-        for(const block of blocks){
-          const lines = block.split(/\r?\n/).map(s=>s.trim()).filter(Boolean);
-          if(lines.length === 0) continue;
-          let title = '';
-          for(const t of lines){ if(!isBoiler(t)){ title = t; break; } }
-          if(!title) continue;
-          const keys = Array.from(block.toUpperCase().matchAll(keyRe), m => m[1]);
-          for(const k of keys){ found.push({ title, key:k }); }
-        }
-
-        // Pass 2: if strict & no keys, retry loose across whole text
-        if(found.length === 0 && useStrict){
-          for(const m of raw.toUpperCase().matchAll(looseRe)){
-            const idx = m.index || 0;
-            const upTo = raw.slice(0, idx);
-            const backLines = upTo.split(/\r?\n/);
+        function collect(regex){
+          const found = [];
+          for(let i=0;i<lines.length;i++){
+            const line = lines[i].toUpperCase();
+            if(!regex.test(line)) continue;
+            const key = line; // already uppercased
+            // find nearest usable title above the key
             let title = '';
-            for(let j=backLines.length-1;j>=0;j--){
-              const t = backLines[j].trim();
-              if(!t || isBoiler(t)) continue;
+            for(let j=i-1; j>=0; j--){
+              const t = lines[j];
+              if(isBoiler(t)) continue;
               title = t; break;
             }
-            if(title) found.push({ title, key:m[1] });
+            if(title) found.push({ title, key });
           }
+          return found;
         }
 
-        if(found.length === 0) return '';
+        // Try strict first; if nothing parsed and strict toggle is on, fall back to loose
+        let found = collect(keyRegex);
+        if(found.length === 0 && useStrict){
+          found = collect(looseRe);
+        }
 
-        // Group by title and count duplicates
+        // Group by title
         const byTitle = new Map();
         for(const {title, key} of found){
           if(!byTitle.has(title)) byTitle.set(title, []);
           byTitle.get(title).push(key);
         }
 
+        // Build output
         let rows = [];
         for(const [title, keys] of byTitle){
           if(elDedupe.checked){
             const uniqKeys = Array.from(new Set(keys));
             const kept = uniqKeys[0] || '';
-            const count = keys.length; // total detected
+            const count = keys.length; // total detected for that title
             const suffix = count > 1 ? ` .${count}` : '';
             rows.push(`${kept} | ${title}${suffix}`);
           } else {
@@ -198,27 +209,36 @@
             return at.localeCompare(bt);
           });
         }
-        return rows.join('\n');
+        return rows.join('
+');
       }
 
       function update(){
         elOut.textContent = parse(elIn.value);
-        autoResize(elIn); autoResize(elOut);
+        autoResize(elIn);
+        autoResize(elOut);
         elOut.parentElement.classList.add('highlight');
         setTimeout(()=>elOut.parentElement.classList.remove('highlight'), 700);
       }
 
       async function copyOutput(showToast=true){
-        try{ await navigator.clipboard.writeText(elOut.textContent || ''); if(showToast) toast('Copied formatted keys'); }
-        catch{ if(showToast) toast('Copy failed. Select and copy manually.'); }
+        try{
+          await navigator.clipboard.writeText(elOut.textContent || '');
+          if(showToast) toast('Copied formatted keys');
+        }catch{
+          if(showToast) toast('Copy failed. Select and copy manually.');
+        }
       }
 
-      elIn.addEventListener('input', () => { update(); copyOutput(false); });
+      elIn.addEventListener('input', () => { update(); });
       elDedupe.addEventListener('change', ()=>{update(); copyOutput(false);});
-      elSort.addEventListener('change',   ()=>{update(); copyOutput(false);});
+      elSort.addEventListener('change', ()=>{update(); copyOutput(false);});
       elStrict.addEventListener('change', ()=>{update(); copyOutput(false);});
 
       elCopy.addEventListener('click', copyOutput);
+
+      // Force processing button
+      elProcess.addEventListener('click', () => { update(); copyOutput(); pulse(elOut); });
 
       elDownload.addEventListener('click', () => {
         const blob = new Blob([elOut.textContent || ''], { type: 'text/plain;charset=utf-8' });
@@ -230,8 +250,7 @@
       });
 
       elExample.addEventListener('click', () => {
-        elIn.value =
-`Operation Wolf Returns: First Mission
+        elIn.value = `Operation Wolf Returns: First Mission
 7M90A-LN00T-3W9WL
 Redeem
 Steam will not provide extra giftable copies of games you already own.
@@ -245,13 +264,17 @@ Grand Mountain Adventure: Wonderlands
 959PG-RA0RI-NRZYM
 Redeem
 Steam will not provide extra giftable copies of games you already own.`;
-        update(); copyOutput(); pulse(card);
+        update();
+        copyOutput();
+        pulse(card);
       });
 
-      // Parse after paste lands, then auto-copy
+      // Auto-parse and auto-copy on paste
       elIn.addEventListener('paste', () => setTimeout(async () => {
         update();
-        const lines = (elOut.textContent || '').split(/\r?\n/).filter(Boolean);
+        const lines = (elOut.textContent || '').split(/
+?
+/).filter(Boolean);
         await copyOutput(false);
         toast(`Auto-copied ${lines.length} line${lines.length===1?'':'s'}`);
         pulse(elOut);
