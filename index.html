@@ -3,12 +3,12 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Humble Key Formatter</title>
+  <title>Humble/Fanatical Key Formatter</title>
   <style>
     :root { --bg:#000000; --card:#070b10; --muted:#9db4c8; --text:#eaf4ff; --accent:#6bb6ff; --accent-2:#2a80ff; }
     * { box-sizing: border-box; }
     html,body { height: 100%; }
-    body { margin:0; font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial, "Noto Sans", "Apple Color Emoji", "Segoe UI Emoji"; background: #000; color: var(--text); }
+    body { margin:0; font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial, "Noto Sans", "Apple Color Emoji", "Segoe UI Emoji"; background:#000; color:var(--text); }
     body::before{
       content:""; position:fixed; inset:-20vmax; pointer-events:none;
       background: radial-gradient(30vmax 20vmax at 85% -10%, rgba(38,119,255,.25), transparent 60%),
@@ -27,45 +27,56 @@
             overflow: hidden; backdrop-filter: blur(6px); animation: popin .6s ease-out; }
     @keyframes popin { from { transform: translateY(8px) scale(.98); opacity: 0; } to { transform: translateY(0) scale(1); opacity: 1; } }
 
-    textarea, pre { width: 100%; min-height: 240px; height: auto; padding: 14px 16px; resize: none; font: 12.5px/1.4 ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace; border: 1px solid rgba(255,255,255,.06); border-radius: 14px; background: #03060b; color: var(--text); outline: none; transition: border-color .25s ease, box-shadow .25s ease, transform .1s ease; }
+    .row { display:grid; grid-template-columns: 1fr; gap:14px; padding:16px; }
+    @media (min-width: 900px){ .row { grid-template-columns: 1fr 1fr; } }
+
+    textarea, pre { width: 100%; min-height: 240px; height: auto; padding: 14px 16px; resize: none;
+      font: 12.5px/1.4 ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+      border: 1px solid rgba(255,255,255,.06); border-radius: 14px; background:#03060b; color:var(--text);
+      outline: none; transition: border-color .25s ease, box-shadow .25s ease, transform .1s ease; }
     textarea:focus { border-color: rgba(107,182,255,.65); box-shadow: 0 0 0 3px rgba(42,128,255,.25), 0 10px 30px rgba(0,0,0,.45); transform: translateY(-1px); }
-    pre { white-space: pre-wrap; word-break: break-word; background: #03060b; position: relative; }
-    pre::after{ content:""; position:absolute; inset:0; pointer-events:none; background: linear-gradient(90deg, rgba(42,128,255,.06), transparent 20%, transparent 80%, rgba(42,128,255,.06)); opacity:0; transition: opacity .6s ease; }
+    pre { white-space: pre-wrap; word-break: break-word; position: relative; }
+    pre::after{ content:""; position:absolute; inset:0; pointer-events:none; background:
+      linear-gradient(90deg, rgba(42,128,255,.06), transparent 20%, transparent 80%, rgba(42,128,255,.06));
+      opacity:0; transition: opacity .6s ease; }
     .highlight pre::after{ opacity:1; animation: shimmer 1.2s ease; }
     @keyframes shimmer { from{ background-position:-100% 0; } to{ background-position:200% 0; } }
 
-    .controls { display:flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; padding: 12px 16px; border-top: 1px solid rgba(255,255,255,.06); background: rgba(12,18,26,.6); }
+    .controls { display:flex; flex-wrap:wrap; gap:8px 14px; align-items:center; padding:12px 16px;
+      border-top:1px solid rgba(255,255,255,.06); background: rgba(12,18,26,.6); }
 
-    .btn { position:relative; padding: 10px 14px; border-radius: 12px; border: 1px solid rgba(107,182,255,.35);
-           background: linear-gradient(180deg, rgba(42,128,255,.25), rgba(42,128,255,.15)); color: var(--text);
-           cursor: pointer; font-weight: 700; letter-spacing: .2px; transition: transform .12s ease, box-shadow .25s ease, filter .25s ease; }
-    .btn::before{ content:""; position:absolute; inset:-2px; border-radius:14px; background: radial-gradient(60% 60% at 50% -20%, rgba(107,182,255,.6), transparent 60%); filter: blur(12px); opacity:.45; z-index:-1; transition: opacity .25s ease; }
+    .btn { position:relative; padding:10px 14px; border-radius:12px; border:1px solid rgba(107,182,255,.35);
+      background: linear-gradient(180deg, rgba(42,128,255,.25), rgba(42,128,255,.15)); color:var(--text);
+      cursor:pointer; font-weight:700; letter-spacing:.2px; transition: transform .12s ease, box-shadow .25s ease, filter .25s ease; }
+    .btn::before{ content:""; position:absolute; inset:-2px; border-radius:14px;
+      background: radial-gradient(60% 60% at 50% -20%, rgba(107,182,255,.6), transparent 60%); filter: blur(12px);
+      opacity:.45; z-index:-1; transition: opacity .25s ease; }
     .btn:hover { box-shadow: 0 10px 30px rgba(42,128,255,.25); transform: translateY(-1px); }
     .btn:active { transform: translateY(0); filter: brightness(.96); }
 
-    .pill { display: inline-flex; align-items: center; gap: 8px; padding: 8px 10px; border-radius: 999px; border: 1px solid rgba(255,255,255,.12); background: rgba(12,18,26,.9); font-size: 12px; color: var(--muted); transition: border-color .25s ease, background .25s ease; }
+    .pill { display:inline-flex; align-items:center; gap:8px; padding:8px 10px; border-radius:999px;
+      border:1px solid rgba(255,255,255,.12); background:rgba(12,18,26,.9); font-size:12px; color:var(--muted);
+      transition:border-color .25s ease, background .25s ease; }
     .pill:hover { border-color: rgba(107,182,255,.45); background: rgba(12,18,26,1); }
     .pill input { accent-color: var(--accent); }
 
-    .hint { color: var(--muted); font-size: 12px; }
-    .header { display:flex; justify-content: space-between; align-items: end; gap: 16px; margin-bottom: 12px; }
-    .footer { margin-top: 12px; color: var(--muted); font-size: 12px; }
-    .small { font-size: 11.5px; color: var(--muted); }
-    .kbd { border: 1px solid rgba(255,255,255,.16); background: rgba(255,255,255,.06); border-radius: 6px; padding: 2px 6px; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace; }
-    .row { display: grid; grid-template-columns: 1fr; gap: 14px; padding: 16px; }
-    @media (min-width: 900px){ .row { grid-template-columns: 1fr 1fr; } }
+    .hint { color:var(--muted); font-size:12px; }
+    .header { display:flex; justify-content:space-between; align-items:end; gap:16px; margin-bottom:12px; }
+    .footer { margin-top:12px; color:var(--muted); font-size:12px; }
+    .small { font-size:11.5px; color:var(--muted); }
+    .kbd { border:1px solid rgba(255,255,255,.16); background:rgba(255,255,255,.06); border-radius:6px; padding:2px 6px; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace; }
     .sr { position:absolute; left:-10000px; top:auto; width:1px; height:1px; overflow:hidden; }
 
     .pulseGlow { box-shadow: 0 0 0 0 rgba(42,128,255,.45); animation: pulse 1.8s ease-out 2; }
-    @keyframes pulse { 0%{ box-shadow: 0 0 0 0 rgba(42,128,255,.55);} 70%{ box-shadow: 0 0 0 18px rgba(42,128,255,0);} 100%{ box-shadow: 0 0 0 0 rgba(42,128,255,0);} }
+    @keyframes pulse { 0%{ box-shadow:0 0 0 0 rgba(42,128,255,.55);} 70%{ box-shadow:0 0 0 18px rgba(42,128,255,0);} 100%{ box-shadow:0 0 0 0 rgba(42,128,255,0);} }
   </style>
 </head>
 <body>
   <div class="wrap">
     <div class="header">
       <div>
-        <h1>Humble Key Formatter → <span class="small">Steam style</span></h1>
-        <div class="hint">Paste your Humble/Fanatical page text on the left. The right side outputs <code>KEY | Title</code>. Works fully client-side.</div>
+        <h1>Humble / Fanatical Key Formatter → <span class="small">Steam style</span></h1>
+        <div class="hint">Paste your page text on the left. The right side outputs <code>KEY | Title</code>. All local—no network.</div>
       </div>
       <button id="exampleBtn" class="btn" title="Load example">Load example</button>
     </div>
@@ -74,7 +85,7 @@
       <div class="row">
         <div>
           <label class="sr" for="input">Input</label>
-          <textarea id="input" placeholder="Paste keys block here…"></textarea>
+          <textarea id="input" placeholder="Paste Humble or Fanatical keys block here…"></textarea>
         </div>
         <div>
           <label class="sr" for="output">Output</label>
@@ -93,7 +104,7 @@
     </div>
 
     <div class="footer">
-      <div>Regex covers <em>XXXXX-XXXXX-XXXXX</em> keys. Title is taken from the nearest non-boilerplate line above the key (Fanatical: falls back to “Product cover for …” name).</div>
+      <div>We detect keys like <em>XXXXX-XXXXX-XXXXX</em>. Title = nearest non-boilerplate line above the key. Fanatical “Product cover for …” is ignored unless it’s the only title we can find.</div>
     </div>
   </div>
 
@@ -113,23 +124,32 @@
       function normalizeInput(s){
         if(!s) return '';
         s = s.normalize('NFKC');
-        s = s.replace(/[\u2010-\u2015\u2212\u2043]/g, '-'); // unicode dashes → '-'
+        s = s.replace(/[\u2010-\u2015\u2212\u2043]/g, '-'); // Unicode dashes → '-'
         s = s.replace(/[\u200B-\u200D\uFEFF]/g, '');       // zero-width & BOM
         s = s.replace(/\u00A0/g, ' ');                    // nbsp → space
         return s;
       }
 
+      // Boilerplate lines to skip as titles
       function isBoiler(s){
         if(!s) return true;
-        if(/^redeem$/i.test(s)) return true;
-        if(/steam will not provide extra giftable copies/i.test(s)) return true;
-        if(/^steam key$/i.test(s)) return true;
-        if(/^copy$/i.test(s)) return true;
-        // Fanatical boilerplate
-        if(/^steam logo$/i.test(s)) return true;
-        if(/^how do i redeem my key\??$/i.test(s)) return true;
-        if(/^build your own.*bundle$/i.test(s)) return true; // bundle header
+        // Humble common lines
+        if (/^redeem$/i.test(s)) return true;
+        if (/steam will not provide extra giftable copies/i.test(s)) return true;
+        if (/^steam key$/i.test(s)) return true;
+        if (/^copy$/i.test(s)) return true;
+        // Fanatical common lines
+        if (/^steam logo$/i.test(s)) return true;
+        if (/^how do i redeem my key\??$/i.test(s)) return true;
+        if (/^build your own.*bundle$/i.test(s)) return true; // bundle headers
+        if (/^product cover for\b/i.test(s)) return true;      // label line
         return false;
+      }
+
+      // If we need a fallback when only "Product cover for X" exists
+      function coverNameFrom(line){
+        const m = /^product cover for\s*(.+)$/i.exec(line || '');
+        return m ? m[1].trim() : '';
       }
 
       function parse(input){
@@ -141,61 +161,44 @@
         const useStrict = elStrict.checked;
         const keyRe = useStrict ? strictRe : looseRe;
 
-        // Split by blank lines (Humble & Fanatical format blocks)
-        const blocks = raw.split(/\r?\n\s*\r?\n+/);
-        const found = [];
+        const lines = raw.split(/\r?\n/).map(s => s.trim());
 
-        // Pass 1: block-based
-        for(const block of blocks){
-          const lines = block.split(/\r?\n/).map(s=>s.trim()).filter(Boolean);
-          if(lines.length === 0) continue;
-
-          // Capture Fanatical “Product cover for …” name
-          let coverName = '';
-          for(const t of lines){
-            const m = /^product cover for\s*(.+)$/i.exec(t);
-            if(m){ coverName = m[1].trim(); break; }
+        // helper: find title above an index; prefer non-boilerplate; remember nearest "Product cover for ..." as fallback
+        function titleAbove(idx){
+          let fallback = '';
+          for(let j = idx - 1; j >= 0; j--){
+            const t = lines[j];
+            if(!t) continue;
+            if(/^product cover for\b/i.test(t) && !fallback) fallback = coverNameFrom(t);
+            if(isBoiler(t)) continue;
+            return t;
           }
-
-          // Prefer first non-boilerplate line (skip the cover label itself)
-          let title = '';
-          for(const t of lines){
-            if(/^product cover for\b/i.test(t)) continue;
-            if(!isBoiler(t)){ title = t; break; }
-          }
-          if(!title) title = coverName; // fallback
-          if(!title) continue;
-
-          const keys = Array.from(block.toUpperCase().matchAll(keyRe), m => m[1]);
-          for(const k of keys){ found.push({ title, key:k }); }
+          return fallback;
         }
 
-        // Pass 2: if strict & nothing found, retry loose across whole text
-        if(found.length === 0 && useStrict){
-          for(const m of raw.toUpperCase().matchAll(looseRe)){
-            const idx = m.index || 0;
-            const upTo = raw.slice(0, idx);
-            const backLines = upTo.split(/\r?\n/);
-            let title = '';
-            let coverName = '';
-            for(let j=backLines.length-1;j>=0;j--){
-              const t = backLines[j].trim();
-              if(/^product cover for\b/i.test(t)){
-                const mm = /^product cover for\s*(.+)$/i.exec(t);
-                if(mm) coverName = mm[1].trim();
-                continue;
-              }
-              if(!t || isBoiler(t)) continue;
-              title = t; break;
+        // collect keys line-by-line (works for both sites)
+        function collect(regex){
+          const found = [];
+          for(let i=0;i<lines.length;i++){
+            const upper = lines[i].toUpperCase();
+            const matches = Array.from(upper.matchAll(regex), m => m[1]);
+            if(matches.length === 0) continue;
+            const title = titleAbove(i);
+            if(!title) continue;
+            for(const k of matches){
+              found.push({ title, key: k.toUpperCase() });
             }
-            if(!title) title = coverName;
-            if(title) found.push({ title, key:m[1] });
           }
+          return found;
         }
 
+        let found = collect(keyRe);
+        if(found.length === 0 && useStrict){
+          found = collect(looseRe);
+        }
         if(found.length === 0) return '';
 
-        // Group by title and count duplicates
+        // group by title
         const byTitle = new Map();
         for(const {title, key} of found){
           if(!byTitle.has(title)) byTitle.set(title, []);
@@ -205,13 +208,13 @@
         let rows = [];
         for(const [title, keys] of byTitle){
           if(elDedupe.checked){
-            const uniqKeys = Array.from(new Set(keys));
-            const kept = uniqKeys[0] || '';
-            const count = keys.length; // total detected
+            const uniq = Array.from(new Set(keys));
+            const kept = uniq[0] || '';
+            const count = keys.length;
             const suffix = count > 1 ? ` .${count}` : '';
             rows.push(`${kept} | ${title}${suffix}`);
           } else {
-            for(const k of keys){ rows.push(`${k} | ${title}`); }
+            for(const k of keys) rows.push(`${k} | ${title}`);
           }
         }
 
@@ -237,11 +240,11 @@
         catch{ if(showToast) toast('Copy failed. Select and copy manually.'); }
       }
 
+      // events
       elIn.addEventListener('input', () => { update(); copyOutput(false); });
-      elDedupe.addEventListener('change', ()=>{update(); copyOutput(false);});
-      elSort.addEventListener('change',   ()=>{update(); copyOutput(false);});
-      elStrict.addEventListener('change', ()=>{update(); copyOutput(false);});
-
+      elDedupe.addEventListener('change', ()=>{ update(); copyOutput(false); });
+      elSort.addEventListener('change',   ()=>{ update(); copyOutput(false); });
+      elStrict.addEventListener('change', ()=>{ update(); copyOutput(false); });
       elCopy.addEventListener('click', copyOutput);
       elProcess.addEventListener('click', () => { update(); copyOutput(); pulse(elOut); });
 
@@ -286,7 +289,7 @@ How Do I Redeem My Key?`;
         update(); copyOutput(); pulse(card);
       });
 
-      // Parse after paste lands, then auto-copy
+      // parse after paste lands, then auto-copy
       elIn.addEventListener('paste', () => setTimeout(async () => {
         update();
         const lines = (elOut.textContent || '').split(/\r?\n/).filter(Boolean);
@@ -308,7 +311,7 @@ How Do I Redeem My Key?`;
       function toast(msg){
         const t = document.createElement('div');
         t.textContent = msg;
-        t.style.position='fixed'; t.style.right='16px'; t.style.bottom='16px';
+        t.style.position='fixed'; right='16px'; t.style.right='16px'; t.style.bottom='16px';
         t.style.padding='10px 12px'; t.style.borderRadius='12px';
         t.style.background='linear-gradient(180deg, rgba(42,128,255,.9), rgba(42,128,255,.75))';
         t.style.color='white'; t.style.fontSize='12.5px';
@@ -321,8 +324,7 @@ How Do I Redeem My Key?`;
         setTimeout(()=>{ t.style.transform='translateY(10px)'; t.style.opacity='0'; setTimeout(()=>t.remove(), 250); },1600);
       }
 
-      // initial
-      update();
+      update(); // initial
     })();
   </script>
 </body>
